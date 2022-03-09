@@ -9,7 +9,6 @@ import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
-import android.widget.Button;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -31,78 +30,22 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Button button = (Button)findViewById(R.id.button);
-        TextView tv = findViewById(R.id.text_view);
+        Thread t = new Thread() {
 
-        LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_NETWORK_STATE) != PackageManager.PERMISSION_GRANTED) {
-
-            return;
-        }
-
-        try {
-
-            gps_loc = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-            network_loc = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        if (gps_loc != null) {
-            final_loc = gps_loc;
-            latitude = final_loc.getLatitude();
-            longitude = final_loc.getLongitude();
-        }
-        else if (network_loc != null) {
-            final_loc = network_loc;
-            latitude = final_loc.getLatitude();
-            longitude = final_loc.getLongitude();
-        }
-        else {
-            latitude = 0.0;
-            longitude = 0.0;
-        }
-
-        ActivityCompat.requestPermissions(this, new String[] {Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_NETWORK_STATE}, 1);
-
-        try {
-            Geocoder geocoder = new Geocoder(this, Locale.getDefault());
-            List<Address> addresses = geocoder.getFromLocation(latitude, longitude, 1);
-            if (addresses != null && addresses.size() > 0) {
-                userCountry = addresses.get(0).getCountryName();
-                userAddress = addresses.get(0).getAddressLine(0);
-                tv.setText(userCountry + "\n" + userAddress + '\n' + longitude  + '\n' + latitude + "\n" + "Distance = " + distFrom(latitude, longitude, 52.371675, 4.910954));
+            @Override
+            public void run() {
+                try {
+                    while (!isInterrupted()) {
+                        Thread.sleep(1);
+                        runOnUiThread(() -> Update());
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
-            else {
-                userCountry = "Unknown";
-                tv.setText(userCountry);
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        button.setOnClickListener(view -> {
-            if (gps_loc != null) {
-                latitude = final_loc.getLatitude();
-                longitude = final_loc.getLongitude();
-            }
-            else if (network_loc != null) {
-                latitude = final_loc.getLatitude();
-                longitude = final_loc.getLongitude();
-            }
-            else {
-                latitude = 0.0;
-                longitude = 0.0;
-            }
-            tv.setText(userCountry + "\n" + userAddress + '\n' + longitude  + '\n' + latitude + "\n" + "Distance = " + distFrom(latitude, longitude, 52.371675, 4.910954));
-        });
-
+        };
+        t.start();
     }
-
 
     public static float distFrom(double lat1, double lng1, double lat2, double lng2)
     {
@@ -120,5 +63,59 @@ public class MainActivity extends AppCompatActivity {
         System.out.println("Distance is : " + lat1);
         System.out.println("Distance is : " + lat2);
         return dist; // distance in meters
+    }
+    @SuppressLint("SetTextI18n")
+    public void Update()
+    {
+        LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_NETWORK_STATE) != PackageManager.PERMISSION_GRANTED) {
+
+            return;
+        }
+
+        try {
+
+            gps_loc = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+            network_loc = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        if (gps_loc != null) {
+            final_loc = gps_loc;
+            latitude = final_loc.getLatitude();
+            longitude = final_loc.getLongitude();
+        }
+        else if (network_loc != null) {
+            final_loc = network_loc;
+            latitude = final_loc.getLatitude();
+            longitude = final_loc.getLongitude();
+        }
+        else {
+            latitude = 0.0;
+            longitude = 0.0;
+        }
+
+        ActivityCompat.requestPermissions(this, new String[] {Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_NETWORK_STATE}, 1);
+        TextView tv = findViewById(R.id.text_view);
+        try {
+            Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+            List<Address> addresses = geocoder.getFromLocation(latitude, longitude, 1);
+            if (addresses != null && addresses.size() > 0) {
+                userCountry = addresses.get(0).getCountryName();
+                userAddress = addresses.get(0).getAddressLine(0);
+                tv.setText(userCountry + "\n" + userAddress + '\n' + longitude  + '\n' + latitude + "\n" + "Distance = " + distFrom(latitude, longitude, 52.371675, 4.910954));
+            }
+            else {
+                userCountry = "Unknown";
+                tv.setText(userCountry);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
